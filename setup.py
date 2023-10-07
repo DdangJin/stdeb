@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 import codecs
 
 with codecs.open('README.rst', encoding='utf-8') as file:
@@ -9,7 +9,7 @@ setup(
     name='stdeb',
     # Keep version in sync with stdeb/__init__.py and install section
     # of README.rst.
-    version='0.11.2',
+    version='0.11.4',
     author='DdangJin',
     author_email='hdj997@gmail.com',
     description='Python to Debian source package conversion utility',

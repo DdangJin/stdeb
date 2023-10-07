@@ -17,19 +17,24 @@ class bdist_deb(Command):
         ('ignore-source-changes', None,
          'Ignore all changes on source when building source package '
          '(add -i.* option to dpkg-source'),
+        ('compress-xz', None,
+         'Use xzip (add -Zxz option to dpkg-buildpackage)'),
         ]
     boolean_options = [
         'sign-results',
         'ignore-source-changes',
+        'compress-xz',
         ]
 
     def initialize_options(self):
         self.sign_results = False
         self.ignore_source_changes = False
+        self.compress_xz = False
 
     def finalize_options(self):
         self.sign_results = bool(self.sign_results)
         self.ignore_source_changes = bool(self.ignore_source_changes)
+        self.compress_xz = bool(self.compress_xz)
 
     def run(self):
         # generate .dsc source pkg
@@ -83,6 +88,9 @@ class bdist_deb(Command):
 
         if self.ignore_source_changes:
             syscmd.append('-i.*')
+
+        if self.compress_xz:
+            syscmd.append('-Zxz')
 
         print('CALLING ' + ' '.join(syscmd))
         util.process_command(syscmd, cwd=target_dir)

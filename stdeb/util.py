@@ -135,6 +135,8 @@ stdeb_cmdline_opts = [
     ('ignore-source-changes', None,
      'Ignore all changes on source when building source package (add -i.* '
      'option to dpkg-source)'),
+    ('compress-xz', None,
+     'Use xzip (add -Zxz option to dpkg-buildpackage)'),
     ]
 
 # old entries from stdeb.cfg:
@@ -213,6 +215,7 @@ stdeb_cmd_bool_opts = [
     'with-dh-systemd',
     'sign-results',
     'ignore-source-changes',
+    'compress-xz',
     ]
 
 
@@ -1337,6 +1340,7 @@ def build_dsc(debinfo,
               debian_dir_only=False,
               sign_dsc=False,
               ignore_source_changes=False,
+              compress_xz=False,
               ):
     """make debian source package"""
     #    A. Find new dirname and delete any pre-existing contents
@@ -1565,6 +1569,9 @@ def build_dsc(debinfo,
 
     if ignore_source_changes:
         args.append('-i.*')
+
+    if compress_xz:
+        args.append('-Zxz')
 
     dpkg_buildpackage(*args, cwd=fullpath_repackaged_dirname)
 

@@ -49,6 +49,12 @@ interpreter (and only the Python3 package installs scripts)::
 News
 ----
 
+ * 2023-10-07: **Version 0.11.4**.
+
+  * Improvements:
+
+    * add compress xz parameter
+
  * 2023-09-08: **Version 0.11.2**.
 
   * Bugfixes:
