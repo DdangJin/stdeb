@@ -142,6 +142,7 @@ class sdist_dsc(common_debian_package_command):
                   remove_expanded_source_dir=self.remove_expanded_source_dir,
                   sign_dsc=self.sign_results,
                   ignore_source_changes=self.ignore_source_changes,
+                  compress_xz=self.compress_xz,
                   )
 
         for rmdir in cleanup_dirs:

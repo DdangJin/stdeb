@@ -9,7 +9,7 @@ setup(
     name='stdeb',
     # Keep version in sync with stdeb/__init__.py and install section
     # of README.rst.
-    version='0.11.3',
+    version='0.11.4',
     author='DdangJin',
     author_email='hdj997@gmail.com',
     description='Python to Debian source package conversion utility',

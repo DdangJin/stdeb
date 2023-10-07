@@ -36,6 +36,7 @@ class common_debian_package_command(Command):
         self.with_dh_systemd = False
         self.sign_results = False
         self.ignore_source_changes = False
+        self.compress_xz = False
         self.compat = DH_DEFAULT_VERS
 
         # deprecated options
