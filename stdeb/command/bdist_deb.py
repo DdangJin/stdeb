@@ -16,28 +16,19 @@ class bdist_deb(Command):
         ('ignore-source-changes', None,
          'Ignore all changes on source when building source package '
          '(add -i.* option to dpkg-source'),
-        ('use-exist-debian', None,
-         'Use exist debian directory, not create debian directory. '
-         'This uses the pbr version of upstream '
-         'and creates new debian/changelog to match the upstream version '
-         'without using the existing debian/changelog. '
-         '(An error occurs if there is no debian directory.)'),
         ]
     boolean_options = [
         'sign-results',
         'ignore-source-changes',
-        'use-exist-debian',
         ]
 
     def initialize_options(self):
         self.sign_results = False
         self.ignore_source_changes = False
-        self.use_exist_debian = False
 
     def finalize_options(self):
         self.sign_results = bool(self.sign_results)
         self.ignore_source_changes = bool(self.ignore_source_changes)
-        self.use_exist_debian = bool(self.use_exist_debian)
 
     def run(self):
         # generate .dsc source pkg
@@ -66,7 +57,7 @@ class bdist_deb(Command):
             raise ValueError('could not find debian source directory')
 
         target_dir = target_dirs[0]
-        if not self.use_exist_debian:
+        if not sdist_dsc.use_exist_debian:
             self.check_for_and_copy_custom_debian_scripts(target_dir)
         self.generate_debian_pkg(target_dir)
 
