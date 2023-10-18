@@ -143,6 +143,7 @@ class sdist_dsc(common_debian_package_command):
                   sign_dsc=self.sign_results,
                   ignore_source_changes=self.ignore_source_changes,
                   compress_xz=self.compress_xz,
+                  use_exist_debian=self.use_exist_debian,
                   )
 
         for rmdir in cleanup_dirs:

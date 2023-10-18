@@ -136,7 +136,13 @@ stdeb_cmdline_opts = [
      'Ignore all changes on source when building source package (add -i.* '
      'option to dpkg-source)'),
     ('compress-xz', None,
-     'Use xzip (add -Zxz option to dpkg-buildpackage)'),
+     'Use xzip (add -Zxz option to dh_builddeb)'),
+    ('use-exist-debian', None,
+     'Use exist debian directory, not create debian directory. '
+     'This uses the pbr version of upstream '
+     'and creates new debian/changelog to match the upstream version '
+     'without using the existing debian/changelog. '
+     '(An error occurs if there is no debian directory.)'),
     ]
 
 # old entries from stdeb.cfg:
@@ -216,6 +222,7 @@ stdeb_cmd_bool_opts = [
     'sign-results',
     'ignore-source-changes',
     'compress-xz',
+    'use-exist-debian',
     ]
 
 
@@ -821,6 +828,9 @@ class DebianInfo:
                         cfg.add_section(module_name)
                     cfg.set(module_name, opt_name, value)
 
+            if getattr(sdist_dsc_command, 'compress_xz'):
+                self.override_dh_builddeb = RULES_OVERRIDE_BUILDDEB_TARGET
+
         self.stdeb_version = __stdeb_version__
         self.module_name = module_name
         self.compat = compat
@@ -1341,6 +1351,7 @@ def build_dsc(debinfo,
               sign_dsc=False,
               ignore_source_changes=False,
               compress_xz=False,
+              use_exist_debian=False,
               ):
     """make debian source package"""
     #    A. Find new dirname and delete any pre-existing contents
@@ -1400,90 +1411,123 @@ def build_dsc(debinfo,
 
     ###############################################
     # 2. create debian/ directory and contents
-    debian_dir = os.path.join(fullpath_repackaged_dirname, 'debian')
-    if not os.path.exists(debian_dir):
-        os.mkdir(debian_dir)
 
-    #    A. debian/changelog
-    changelog = CHANGELOG_FILE % debinfo.__dict__
-    with codecs.open(os.path.join(debian_dir, 'changelog'),
-                     mode='w', encoding='utf-8') as fd:
-        fd.write(changelog)
+    orig_deb_dir = 'debian'
+    # If not use argument use-exist-debian and debian directory not existed in repository, make its fake content
+    if not use_exist_debian and not os.path.exists(orig_deb_dir):
+        debian_dir = os.path.join(fullpath_repackaged_dirname, 'debian')
+        if not os.path.exists(debian_dir):
+            os.mkdir(debian_dir)
 
-    #    B. debian/control
-    if debinfo.uploaders:
-        debinfo.uploaders = 'Uploaders: %s\n' % ', '.join(debinfo.uploaders)
-    else:
-        debinfo.uploaders = ''
-    control = CONTROL_FILE % debinfo.__dict__
-    control = re.sub('\n{3,}', '\n\n', control)
-    with codecs.open(os.path.join(debian_dir, 'control'),
-                     mode='w', encoding='utf-8') as fd:
-        fd.write(control)
+        #    A. debian/changelog
+        changelog = CHANGELOG_FILE % debinfo.__dict__
+        with codecs.open(os.path.join(debian_dir, 'changelog'),
+                         mode='w', encoding='utf-8') as fd:
+            fd.write(changelog)
 
-    #    C. debian/rules
-    debinfo.percent_symbol = '%'
-    rules = RULES_MAIN % debinfo.__dict__
+        #    B. debian/control
+        if debinfo.uploaders:
+            debinfo.uploaders = 'Uploaders: %s\n' % ', '.join(debinfo.uploaders)
+        else:
+            debinfo.uploaders = ''
+        control = CONTROL_FILE % debinfo.__dict__
+        control = re.sub('\n{3,}', '\n\n', control)
+        with codecs.open(os.path.join(debian_dir, 'control'),
+                         mode='w', encoding='utf-8') as fd:
+            fd.write(control)
 
-    rules = rules.replace('        ', '\t')
-    rules = re.sub('\n{3,}', '\n\n', rules)
-    rules_fname = os.path.join(debian_dir, 'rules')
-    with codecs.open(rules_fname,
-                     mode='w', encoding='utf-8') as fd:
-        fd.write(rules)
-    os.chmod(rules_fname, 0o755)
+        #    C. debian/rules
+        debinfo.percent_symbol = '%'
+        rules = RULES_MAIN % debinfo.__dict__
 
-    #    D. debian/compat
-    fd = open(os.path.join(debian_dir, 'compat'), mode='w')
-    fd.write('{}\n'.format(str(debinfo.compat)))
-    fd.close()
+        rules = rules.replace('        ', '\t')
+        rules = re.sub('\n{3,}', '\n\n', rules)
+        rules_fname = os.path.join(debian_dir, 'rules')
+        with codecs.open(rules_fname,
+                         mode='w', encoding='utf-8') as fd:
+            fd.write(rules)
+        os.chmod(rules_fname, 0o755)
 
-    #    E. debian/package.mime
-    if debinfo.mime_file != '':
-        if not os.path.exists(debinfo.mime_file):
-            raise ValueError(
-                'a MIME file was specified, but does not exist: %s' % (
-                    debinfo.mime_file,))
-        link_func(debinfo.mime_file,
-                  os.path.join(debian_dir, debinfo.package + '.mime'))
-    if debinfo.shared_mime_file != '':
-        if not os.path.exists(debinfo.shared_mime_file):
-            raise ValueError(
-                'a shared MIME file was specified, but does not exist: %s' % (
-                    debinfo.shared_mime_file,))
-        link_func(debinfo.shared_mime_file,
-                  os.path.join(
-                      debian_dir, debinfo.package + '.sharedmimeinfo'))
-
-    #    F. debian/copyright
-    if debinfo.copyright_file != '':
-        link_func(debinfo.copyright_file,
-                  os.path.join(debian_dir, 'copyright'))
-
-    #    H. debian/<package>.install
-    if len(debinfo.install_file_lines):
-        fd = open(
-            os.path.join(debian_dir, '%s.install' % debinfo.package), mode='w')
-        fd.write('\n'.join(debinfo.install_file_lines)+'\n')
+        #    D. debian/compat
+        fd = open(os.path.join(debian_dir, 'compat'), mode='w')
+        fd.write('{}\n'.format(str(debinfo.compat)))
         fd.close()
 
-    #    I. debian/<package>.udev
-    if debinfo.udev_rules != '':
-        fname = debinfo.udev_rules
-        if not os.path.exists(fname):
-            raise ValueError('udev rules file specified, but does not exist')
-        link_func(fname,
-                  os.path.join(debian_dir, '%s.udev' % debinfo.package))
+        #    E. debian/package.mime
+        if debinfo.mime_file != '':
+            if not os.path.exists(debinfo.mime_file):
+                raise ValueError(
+                    'a MIME file was specified, but does not exist: %s' % (
+                        debinfo.mime_file,))
+            link_func(debinfo.mime_file,
+                      os.path.join(debian_dir, debinfo.package + '.mime'))
+        if debinfo.shared_mime_file != '':
+            if not os.path.exists(debinfo.shared_mime_file):
+                raise ValueError(
+                    'a shared MIME file was specified, but does not exist: %s' % (
+                        debinfo.shared_mime_file,))
+            link_func(debinfo.shared_mime_file,
+                      os.path.join(
+                          debian_dir, debinfo.package + '.sharedmimeinfo'))
 
-    #    J. debian/source/format
-    os.mkdir(os.path.join(debian_dir, 'source'))
-    fd = open(os.path.join(debian_dir, 'source', 'format'), mode='w')
-    fd.write('3.0 (quilt)\n')
-    fd.close()
+        #    F. debian/copyright
+        if debinfo.copyright_file != '':
+            link_func(debinfo.copyright_file,
+                      os.path.join(debian_dir, 'copyright'))
 
-    fd = open(os.path.join(debian_dir, 'source', 'options'), mode='w')
-    fd.write(r'extend-diff-ignore="\.egg-info$"')
-    fd.close()
+        #    H. debian/<package>.install
+        if len(debinfo.install_file_lines):
+            fd = open(
+                os.path.join(debian_dir, '%s.install' % debinfo.package), mode='w')
+            fd.write('\n'.join(debinfo.install_file_lines)+'\n')
+            fd.close()
+
+        #    I. debian/<package>.udev
+        if debinfo.udev_rules != '':
+            fname = debinfo.udev_rules
+            if not os.path.exists(fname):
+                raise ValueError('udev rules file specified, but does not exist')
+            link_func(fname,
+                      os.path.join(debian_dir, '%s.udev' % debinfo.package))
+
+        #    J. debian/source/format
+        os.mkdir(os.path.join(debian_dir, 'source'))
+        fd = open(os.path.join(debian_dir, 'source', 'format'), mode='w')
+        fd.write('3.0 (quilt)\n')
+        fd.close()
+
+        fd = open(os.path.join(debian_dir, 'source', 'options'), mode='w')
+        fd.write(r'extend-diff-ignore="\.egg-info$"')
+        fd.close()
+    else:
+        log.info("copy existed debian")
+        debian_dir = os.path.join(fullpath_repackaged_dirname, 'debian')
+        shutil.rmtree(debian_dir)
+        shutil.copytree(orig_deb_dir, debian_dir)
+        #    A. debian/changelog
+        changelog = CHANGELOG_FILE % debinfo.__dict__
+        with codecs.open(os.path.join(debian_dir, 'changelog'),
+                         mode='w', encoding='utf-8') as fd:
+            fd.write(changelog)
+        # xz
+        if compress_xz:
+            rules_fname = os.path.join(debian_dir, 'rules')
+            fd = open(rules_fname, mode='r')
+            rules = fd.readlines()
+            fd.close()
+
+            rules += """
+            
+            """
+            rules += RULES_OVERRIDE_BUILDDEB_TARGET
+            rules = rules % debinfo.__dict__
+
+            rules = rules.replace('        ', '\t')
+            rules = re.sub('\n{3,}', '\n\n', rules)
+            with codecs.open(rules_fname,
+                             mode='w', encoding='utf-8') as fd:
+                fd.write(rules)
+            os.chmod(rules_fname, 0o755)
 
     if debian_dir_only:
         return
@@ -1570,9 +1614,6 @@ def build_dsc(debinfo,
     if ignore_source_changes:
         args.append('-i.*')
 
-    if compress_xz:
-        args.append('-Zxz')
-
     dpkg_buildpackage(*args, cwd=fullpath_repackaged_dirname)
 
     if 1:
@@ -1646,6 +1687,13 @@ RULES_MAIN = """\
 %(override_dh_virtualenv_py)s
 
 %(binary_target_lines)s
+
+%(override_dh_builddeb)s
+"""
+
+RULES_OVERRIDE_BUILDDEB_TARGET = """
+override_dh_builddeb:
+        dh_builddeb -- -Zxz
 """
 
 RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        python setup.py clean -a"

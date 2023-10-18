@@ -49,11 +49,21 @@ interpreter (and only the Python3 package installs scripts)::
 News
 ----
 
+ * 2023-10-18: **Version 0.11.5**.
+
+  * Bugfixes:
+
+    * add compress-xz parameter
+
+  * Improvements:
+
+    * add use-exist-debian parameter
+
  * 2023-10-07: **Version 0.11.4**.
 
   * Improvements:
 
-    * add compress xz parameter
+    * add compress-xz parameter
 
  * 2023-09-08: **Version 0.11.2**.
 

@@ -37,6 +37,7 @@ class common_debian_package_command(Command):
         self.sign_results = False
         self.ignore_source_changes = False
         self.compress_xz = False
+        self.use_exist_debian = False
         self.compat = DH_DEFAULT_VERS
 
         # deprecated options
@@ -175,7 +176,11 @@ class common_debian_package_command(Command):
                              'you should move it alongside setup.py.' % entry)
                     cfg_files.append(config_fname)
 
-        upstream_version = self.distribution.get_version()
+        if self.use_exist_debian:
+            from pbr import version
+            upstream_version = version.VersionInfo(module_name).semantic_version().debian_string()
+        else:
+            upstream_version = self.distribution.get_version()
         bad_chars = ':_'
         for bad_char in bad_chars:
             if bad_char in upstream_version:
