@@ -1513,14 +1513,10 @@ def build_dsc(debinfo,
         if compress_xz:
             rules_fname = os.path.join(debian_dir, 'rules')
             fd = open(rules_fname, mode='r')
-            rules = fd.readlines()
+            rules = fd.read()
             fd.close()
 
-            rules += """
-            
-            """
             rules += RULES_OVERRIDE_BUILDDEB_TARGET
-            rules = rules % debinfo.__dict__
 
             rules = rules.replace('        ', '\t')
             rules = re.sub('\n{3,}', '\n\n', rules)
