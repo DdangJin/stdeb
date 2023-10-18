@@ -9,7 +9,7 @@ setup(
     name='stdeb',
     # Keep version in sync with stdeb/__init__.py and install section
     # of README.rst.
-    version='0.11.4',
+    version='0.11.5',
     author='DdangJin',
     author_email='hdj997@gmail.com',
     description='Python to Debian source package conversion utility',
@@ -17,7 +17,7 @@ setup(
     license='MIT',
     url='https://github.com/DdangJin/stdeb',
     packages=['stdeb', 'stdeb.command'],
-    python_requires='>=2.7,<3.12',
+    python_requires='>=2.7',
     scripts=[
         'scripts/py2dsc',
         'scripts/py2dsc-deb',
