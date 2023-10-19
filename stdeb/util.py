@@ -830,6 +830,8 @@ class DebianInfo:
 
             if getattr(sdist_dsc_command, 'compress_xz'):
                 self.override_dh_builddeb = RULES_OVERRIDE_BUILDDEB_TARGET
+            else:
+                self.override_dh_builddeb = ''
 
         self.stdeb_version = __stdeb_version__
         self.module_name = module_name
