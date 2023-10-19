@@ -1694,7 +1694,7 @@ override_dh_builddeb:
         dh_builddeb -- -Zxz
 """
 
-RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        python setup.py clean -a"
+RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        python2 setup.py clean -a"
 RULES_OVERRIDE_CLEAN_TARGET_PY3 = "        python3 setup.py clean -a"
 RULES_OVERRIDE_CLEAN_TARGET = r"""
 override_dh_auto_clean:
@@ -1702,14 +1702,14 @@ override_dh_auto_clean:
         find . -name \*.pyc -exec rm {} \;
 """
 
-RULES_OVERRIDE_BUILD_TARGET_PY2 = "        python setup.py build --force"
+RULES_OVERRIDE_BUILD_TARGET_PY2 = "        python2 setup.py build --force"
 RULES_OVERRIDE_BUILD_TARGET_PY3 = "        python3 setup.py build --force"
 RULES_OVERRIDE_BUILD_TARGET = """
 override_dh_auto_build:
 %(rules_override_build_target_pythons)s
 """
 
-RULES_OVERRIDE_INSTALL_TARGET_PY2 = "        python setup.py install --force --root=debian/%(package)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python2_scripts_cli_args)s"  # noqa: E501
+RULES_OVERRIDE_INSTALL_TARGET_PY2 = "        python2 setup.py install --force --root=debian/%(package)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python2_scripts_cli_args)s"  # noqa: E501
 
 RULES_OVERRIDE_INSTALL_TARGET_PY3 = "        python3 setup.py install --force --root=debian/%(package3)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python3_scripts_cli_args)s"  # noqa: E501
 
