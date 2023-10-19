@@ -816,6 +816,8 @@ class DebianInfo:
             with codecs.open(cfg_file, mode='r', encoding='utf-8') as fd:
                 cfg.readfp(fd)
 
+        self.override_dh_builddeb = ''
+
         if sdist_dsc_command is not None:
             # Allow distutils commands to override config files (this lets
             # command line options beat file options).
@@ -830,8 +832,6 @@ class DebianInfo:
 
             if getattr(sdist_dsc_command, 'compress_xz'):
                 self.override_dh_builddeb = RULES_OVERRIDE_BUILDDEB_TARGET
-            else:
-                self.override_dh_builddeb = ''
 
         self.stdeb_version = __stdeb_version__
         self.module_name = module_name
