@@ -1,0 +1,58 @@
+#!/bin/bash
+
+FNAME="$(basename -a $0)"
+
+CMD_sdist_dsc="python3 setup.py --command-packages=stdeb.command sdist_dsc"
+CMD_bdist_deb="bdist_deb"
+
+__USAGE="Usage: ${FNAME}                                                         Just build
+   or: ${FNAME} [[first argument that start with -] [arguments]]        Pass to sdist_dsc and build
+   or: ${FNAME} [aliases]                                               Convert to predefined argument and build
+   - Run '${CMD_sdist_dsc} [arguments] ${CMD_bdist_deb}'
+
+Aliases:        Use multiple aliases with no spaces
+  xz         --use-exist-debian
+  deb        --compress-xz
+
+Examples:
+  ${FNAME} --debian-version 0MyName1
+  ${FNAME} deb
+  ${FNAME} xzdeb        Use xz, deb Aliases"
+
+_CMD=()
+
+CMD_sdist_dsc="python3 setup.py --command-packages=stdeb.command sdist_dsc"
+CMD_bdist_deb="bdist_deb"
+
+_CMD+=("${CMD_sdist_dsc}")
+
+if [ "$#" -ne 0 ]; then
+  if [[ $1 == "-"* ]]; then
+    args_build="$@"
+  else
+    if [ "$#" -gt 1 ]; then
+      echo "[Warning] When use aliases, it is ignored from second argument."
+    fi
+    args_build=""
+    if [[ $1 == *"xz"* ]]; then
+      args_build="${args_build} --compress-xz"
+    fi
+    if [[ $1 == *"deb"* ]]; then
+      args_build="${args_build} --use-exist-debian"
+    fi
+
+    if [ "$args_build" == "" ]; then
+      echo "[Error] not supported args: '$*'"
+      echo "${__USAGE}"
+      exit 1
+    fi
+
+    args_build=${args_build:1}
+  fi
+  _CMD+=("${args_build}")
+fi
+
+_CMD+=("${CMD_bdist_deb}")
+
+echo "CMD: ${_CMD[@]}"
+${_CMD[@]}
